@@ -4,26 +4,18 @@
 
 import path from 'path';
 
-import { Logger } from './base/logger';
-import { Network, NetworkDelegate } from './network/network';
+import { Server } from './server';
 
-class Runtime implements NetworkDelegate {
-    private logger: Logger;
-    private network: Network;
+// Directory from which the smart home frontend should be served.
+const kPublicDirectory = path.resolve(__dirname, '..', 'public');
 
-    constructor() {
-        this.logger = new Logger();
-        this.network = new Network(this, this.logger, {
-            http: {
-                hostname: '0.0.0.0',
-                port: 8001,
-                public: path.resolve(__dirname, '..', 'public'),
-            },
-            ws: {}
-        });
-
-        this.network.listen();
+// Initialize the actual server environment. Initialization will finish by listening to incoming
+// HTTP and WebSocket connections, which will keep the system operational indefinitely.
+new Server({
+    debug: true,
+    network: {
+        http: { hostname: '0.0.0.0', port: 8001, public: kPublicDirectory },
+        ws: { }
     }
-}
 
-const runtime = new Runtime();
+}).initialize();

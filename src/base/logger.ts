@@ -10,9 +10,16 @@ type ColourFunction = (message: string) => string;
 // Interface that enables the system to output messages to the console. Messages of different
 // severities will be displayed in different colours to reflect that.
 export class Logger {
+    private debugEnabled: boolean;
+
+    constructor(debugEnabled?: boolean) {
+        this.debugEnabled = !!debugEnabled;
+    }
+
     // Outputs the given |message| as a debug message to the console.
     debug(message: string, ...optionalParams: any[]) {
-        this.output(message, colors.grey, optionalParams);
+        if (this.debugEnabled)
+            this.output(message, colors.grey, optionalParams);
     }
 
     // Outputs the given |message| as an error message to the console.
