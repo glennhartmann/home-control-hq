@@ -24,9 +24,18 @@ git clone https://github.com/beverloo/home-control-hq.git && cd home-control-hq
 npm install
 ```
 
-## Configuration (`home-control.json`)
+## Configuration (`home-configuration.json`)
 ```json
 {
+    "Room name": [
+        {
+            "label": "Lights",
+            "service": "Philips Hue",
+            "options": {
+                "room": "Room name"
+            }
+        }
+    ]
 }
 ```
 

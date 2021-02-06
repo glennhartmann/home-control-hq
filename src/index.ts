@@ -6,6 +6,9 @@ import path from 'path';
 
 import { Server } from './server';
 
+// JSON file in which the server's configuration is stored.
+const kEnvironmentPath = path.resolve(__dirname, '..', 'home-configuration.json');
+
 // Directory from which the smart home frontend should be served.
 const kPublicDirectory = path.resolve(__dirname, '..', 'public');
 
@@ -18,6 +21,7 @@ const server = new Server({
     database: kStateDatabase,
     debug: true,
 
+    environment: kEnvironmentPath,
     network: {
         http: { hostname: '0.0.0.0', port: 8001, public: kPublicDirectory },
         ws: { }

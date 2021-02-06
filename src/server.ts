@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import { Database } from './base/database';
+import { Environment } from './environment/environment';
 import { Logger } from './base/logger';
 import { Network, NetworkDelegate, NetworkOptions } from './network/network';
 
@@ -13,6 +14,9 @@ interface ServerOptions {
 
     // Whether output for debugging should be enabled.
     debug?: boolean;
+
+    // Qualified path to the JSON file in which environment configuration is stored.
+    environment: string;
 
     // Options specific to the network configuration for the system.
     network: NetworkOptions;
@@ -26,6 +30,7 @@ export class Server implements NetworkDelegate {
     private database: Database;
     private logger: Logger;
 
+    private environment?: Environment;
     private network: Network;
 
     constructor(options: ServerOptions) {
@@ -41,6 +46,11 @@ export class Server implements NetworkDelegate {
 
     // Initializes the server, component by component.
     async initialize() {
+        const environment = await Environment.fromFile(this.logger, this.options.environment);
+        if (!environment)
+            throw new Error(`Unable to load the home configuration, aborting.`);
+
+        this.environment = environment;
         this.network.listen();
     }
 
