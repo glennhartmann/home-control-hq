@@ -4,8 +4,7 @@
   "description": "Home control interface",
   "main": "src/index.ts",
   "scripts": {
-    "run": "ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "serve": "ts-node src/index.ts"
   },
   "author": "Peter Beverloo (@beverloo)",
   "license": "MIT",
