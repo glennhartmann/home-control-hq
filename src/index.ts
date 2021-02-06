@@ -9,13 +9,20 @@ import { Server } from './server';
 // Directory from which the smart home frontend should be served.
 const kPublicDirectory = path.resolve(__dirname, '..', 'public');
 
+// JSON file in which the server's state will be written.
+const kStateDatabase = path.resolve(__dirname, '..', 'home-state.json');
+
 // Initialize the actual server environment. Initialization will finish by listening to incoming
 // HTTP and WebSocket connections, which will keep the system operational indefinitely.
-new Server({
+const server = new Server({
+    database: kStateDatabase,
     debug: true,
+
     network: {
         http: { hostname: '0.0.0.0', port: 8001, public: kPublicDirectory },
         ws: { }
-    }
+    },
 
-}).initialize();
+});
+
+server.initialize();

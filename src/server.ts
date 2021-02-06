@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import { Database } from './base/database';
 import { Logger } from './base/logger';
 import { Network, NetworkDelegate, NetworkOptions } from './network/network';
 
 // Options available to the server infrastructure.
 interface ServerOptions {
+    // Qualified path to the JSON file in which state will be stored.
+    database: string;
+
     // Whether output for debugging should be enabled.
     debug?: boolean;
 
@@ -19,14 +23,20 @@ interface ServerOptions {
 export class Server implements NetworkDelegate {
     private options: ServerOptions;
 
+    private database: Database;
     private logger: Logger;
+
     private network: Network;
 
     constructor(options: ServerOptions) {
         this.options = options;
 
-        this.logger = new Logger(options.debug);
-        this.network = new Network(this, this.logger, options.network);
+        const logger = new Logger(options.debug);
+
+        this.database = new Database(logger, options.database);
+        this.logger = logger;
+
+        this.network = new Network(this, logger, options.network);
     }
 
     // Initializes the server, component by component.
