@@ -85,6 +85,9 @@ export class Server implements NetworkDelegate, ServiceDelegate {
             case 'hello':
                 return { ip: client.clientIp };
 
+            case 'environment-room-list':
+                return { rooms: [ ...this.environment.getRoomNames() ].sort() };
+
             default:
                 this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);
                 break;

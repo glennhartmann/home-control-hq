@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap');
+
+html {
+    background-color: #383330;
+
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    display: grid;
+
+    grid-template-columns: 32vw 32vw 32vw;
+    grid-template-rows: auto;
+    grid-template-areas: "header header header"
+                         "rooms devices controls"
+                         "console console console";
+
+    margin: 0px;
+    padding: 2vh 2vw;
+}
+
+body > section, body > header, body > footer {
+    padding: 1rem;
+    border-radius: 1rem;
+    margin: 1vh 2vw;
+}
+
+body > header { background-color: #90A4AE; }
+body > section { background-color: #90A4AE; }
+body > footer { background-color: #212121; }
+
+body > header { grid-area: header; }
+body > section#rooms { grid-area: rooms; }
+body > section#devices { grid-area: devices; }
+body > section#controls { grid-area: controls; }
+body > footer { grid-area: console; }
+
+/** Header styling **/
+
+header {
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+/** Section styling **/
+
+section ul { margin: 0px; padding: 0px; }
+section li {
+    list-style: none;
+    padding: 0.5rem 1rem;
+    border: 1px solid #455A64;
+    border-radius: 4px;
+}
+
+section li:not(:last-child) { margin-bottom: .5rem; }
+section li.selected { background-color: #B0BEC5; font-weight: bold; }
+
+/** Footer styling **/
+
+footer {
+    height: 200px;
+    overflow-y: auto;
+}
+
+footer > details {
+    color: #D7CCC8;
+}

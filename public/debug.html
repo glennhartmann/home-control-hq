@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <link rel="stylesheet" href="style/debug.css" />
+    <title>Home Control HQ - debugging interface</title>
+  </head>
+  <body>
+    <header>
+      Home Control HQ
+    </header>
+    <section id="rooms">
+      <i>Loading rooms...</i>
+    </section>
+    <section id="services">
+      <i>Select a room first.</i>
+    </section>
+    <section id="controls">
+      <i>Select a device first.</i>
+    </section>
+    <footer id="console"></footer>
+    <script type="module">
+      import { DebugInterface } from './debug.js';
+
+      new DebugInterface({
+          console: document.getElementById('console'),
+          rooms: document.getElementById('rooms'),
+      });
+    </script>
+  </body>
+</html>
