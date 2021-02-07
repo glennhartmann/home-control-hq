@@ -79,7 +79,7 @@ export class Environment {
         }
     }
 
-    // Returns the rooms known to this environment, as [name, services] pairs.
     getRooms() { return Object.entries(this.rooms); }
     getRoomNames() { return Object.keys(this.rooms); }
+    getRoomServices(name: string) { return this.rooms[name]; }
 }

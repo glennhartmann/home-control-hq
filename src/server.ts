@@ -80,13 +80,17 @@ export class Server implements NetworkDelegate, ServiceDelegate {
     // ---------------------------------------------------------------------------------------------
 
     // Called when the given |command| has been received from the |client|.
-    async onNetworkCommand(client: Client, command: string, params: object): Promise<object> {
+    async onNetworkCommand(client: Client, command: string, params: any): Promise<object> {
         switch (command) {
             case 'hello':
                 return { ip: client.clientIp };
 
+            // Temporary commands to make the debug page somewhat work.
             case 'environment-room-list':
                 return { rooms: [ ...this.environment.getRoomNames() ].sort() };
+
+            case 'environment-service-list':
+                return { services: [ ...this.environment.getRoomServices(params.room) ] };
 
             default:
                 this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);
