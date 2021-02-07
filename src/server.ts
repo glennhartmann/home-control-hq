@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import { Client } from './network/client';
 import { Database } from './base/database';
 import { Environment } from './environment/environment';
 import { Logger } from './base/logger';
@@ -78,7 +79,19 @@ export class Server implements NetworkDelegate, ServiceDelegate {
     // NetworkDelegate interface:
     // ---------------------------------------------------------------------------------------------
 
-    // ...
+    // Called when the given |command| has been received from the |client|.
+    async onNetworkCommand(client: Client, command: string, params: object): Promise<object> {
+        switch (command) {
+            case 'hello':
+                return { ip: client.clientIp };
+
+            default:
+                this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);
+                break;
+        }
+
+        return {};
+    }
 
     // ---------------------------------------------------------------------------------------------
     // ServiceDelegate interface:
