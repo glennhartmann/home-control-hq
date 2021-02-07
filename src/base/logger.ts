@@ -16,6 +16,11 @@ export class Logger {
         this.debugEnabled = !!debugEnabled;
     }
 
+    // Outputs the given |message| as something that requires manual intervention.
+    action(message: string, ...optionalParams: any[]) {
+        this.output(message, colors.green, optionalParams);
+    }
+
     // Outputs the given |message| as a debug message to the console.
     debug(message: string, ...optionalParams: any[]) {
         if (this.debugEnabled)

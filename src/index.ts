@@ -31,5 +31,5 @@ const server = new Server({
 });
 
 server.initialize([
-    new PhilipsHueService(),
+    new PhilipsHueService(server),
 ]);

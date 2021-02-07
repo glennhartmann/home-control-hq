@@ -33,7 +33,7 @@ export class Database {
     }
 
     // Returns the value associated with the given |key|, if any, or |defaultValue| otherwise.
-    get(key: string, defaultValue: any = undefined): Promise<any> {
+    get(key: string, defaultValue: any = undefined): any {
         if (this.database.has(key))
             return this.database.get(key);
 

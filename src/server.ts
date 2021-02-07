@@ -29,8 +29,8 @@ interface ServerOptions {
 export class Server implements NetworkDelegate, ServiceDelegate {
     private options: ServerOptions;
 
-    private database: Database;
-    private logger: Logger;
+    public database: Database;
+    public logger: Logger;
 
     private environment: Environment;
     private network: Network;
