@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import { Database } from '../base/database';
+import { Environment } from '../environment/environment';
 import { Logger } from '../base/logger';
 import { Service } from './service';
 
@@ -31,6 +32,33 @@ export class ServiceManager {
     // Adds the given |service| to the manager. It will be initialized immediately after being added
     // which could take an arbitrary amount of time, and might require human intervention.
     async addService(service: Service) {
-        // TODO: Implement this.
+        const identifier = service.getIdentifier();
+
+        if (!await service.initialize()) {
+            this.logger.warn(`Unable to initialize ${identifier}, skipping...`);
+            return;
+        }
+
+        this.services.set(identifier, service);
+    }
+
+    // Validates the given |environment| against the known information of the service manager.
+    // Issues generally are considered fatal, refusing the environment to be loaded.
+    async validateEnvironment(environment: Environment): Promise<boolean> {
+        for (const [ room, services ] of environment.getRooms()) {
+            for (const { service, options } of services) {
+                const instance = this.services.get(service);
+                if (!instance) {
+                    this.logger.error(`Unknown service in room "${room}": ${service}`);
+                    return false;
+                }
+
+                // The `validate` call is expected to raise an error message when one happens.
+                if (!await instance.validate(options))
+                    return false;
+            }
+        }
+
+        return true;
     }
 }

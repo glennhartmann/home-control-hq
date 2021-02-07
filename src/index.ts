@@ -4,6 +4,7 @@
 
 import path from 'path';
 
+import { PhilipsHueService } from './services/philips_hue_service';
 import { Server } from './server';
 
 // JSON file in which the server's configuration is stored.
@@ -29,4 +30,6 @@ const server = new Server({
 
 });
 
-server.initialize([ /* services */ ]);
+server.initialize([
+    new PhilipsHueService(),
+]);

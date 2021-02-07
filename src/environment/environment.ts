@@ -78,4 +78,7 @@ export class Environment {
             this.rooms[roomName] = services;
         }
     }
+
+    // Returns the rooms known to this environment, as [name, services] pairs.
+    getRooms() { return Object.entries(this.rooms); }
 }

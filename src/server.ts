@@ -67,6 +67,9 @@ export class Server implements NetworkDelegate, ServiceDelegate {
         if (!environment)
             return false;
 
+        if (!await this.services.validateEnvironment(environment))
+            return false;
+
         this.environment = environment;
         return true;
     }
