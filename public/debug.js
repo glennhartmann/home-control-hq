@@ -101,6 +101,39 @@ export class DebugInterface {
             element.classList.remove('selected');
 
         event.target.classList.add('selected');
+
+        const container = this.#elements.controls;
+
+        while (container.firstChild)
+            container.removeChild(container.firstChild);
+
+        // TODO: We hard-code this for Philips Hue controls for now. The server will likely need
+        // some form of capabilities sharing to automate this across services.
+        const controls = {
+            'Turn on': { command: 'philips-hue-on' },
+            'Turn off': { command: 'philips-hue-off' },
+            'Brightness 25%': { command: 'philips-hue-brightness', brightness: 63 },
+            'Brightness 100%': { command: 'philips-hue-brightness', brightness: 191 },
+        };
+
+        const listElement = document.createElement('ul');
+        for (const [ label, command ] of Object.entries(controls)) {
+            const controlElement = document.createElement('li');
+
+            controlElement.innerText = label;
+            controlElement.addEventListener(
+                'click', DebugInterface.prototype.issueCommand.bind(
+                    this, { room, service, options, ...command }));
+
+            listElement.appendChild(controlElement);
+        }
+
+        container.appendChild(listElement);
+    }
+
+    // Issues the given |command| to the server. No visual feedback will be given for now.
+    async issueCommand(command) {
+        this.consoleMessage(`Command: ${command.command}`, await this.#connection.send(command));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -115,7 +148,7 @@ export class DebugInterface {
 
         if (message) {
             const contentElement = document.createElement('pre');
-            contentElement.innerText = message;
+            contentElement.innerText = JSON.stringify(message);
 
             detailsElement.appendChild(contentElement);
         }

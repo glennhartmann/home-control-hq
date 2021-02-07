@@ -92,6 +92,16 @@ export class Server implements NetworkDelegate, ServiceDelegate {
             case 'environment-service-list':
                 return { services: [ ...this.environment.getRoomServices(params.room) ] };
 
+            case 'philips-hue-on':
+            case 'philips-hue-off':
+            case 'philips-hue-brightness': {
+                const service = this.services.getService(params.service) as any;
+                if (service)
+                    await service.issueCommand(command, params);
+
+                break;
+            }
+
             default:
                 this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);
                 break;

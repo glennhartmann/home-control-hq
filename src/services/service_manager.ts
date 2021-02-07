@@ -29,6 +29,9 @@ export class ServiceManager {
         this.services = new Map();
     }
 
+    // TODO: Remove this once a Client can connect to one or more services.
+    getService(name: string) { return this.services.get(name); }
+
     // Adds the given |service| to the manager. It will be initialized immediately after being added
     // which could take an arbitrary amount of time, and might require human intervention.
     async addService(service: Service) {

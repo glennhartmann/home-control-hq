@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import { Connection } from './philips_hue/connection';
+import { LightUpdate } from './philips_hue/light_group';
 import { Manager } from './philips_hue/manager';
 import { Server } from '../server';
 import { Service } from './service';
@@ -37,5 +38,28 @@ export class PhilipsHueService implements Service {
         // TODO: This should be more like "connect", so that the appropriate service -> display
         // signals can be propagated as well.
         return true;
+    }
+
+    // Called when the given |command| has been issued for a Philips Hue service.
+    async issueCommand(command: string, params: any) {
+        const group = this.manager.getGroup(params.options.room);
+        if (!group)
+            return;
+
+        let update: LightUpdate | undefined;
+        switch (command) {
+            case 'philips-hue-on':
+                update = { on: true };
+                break;
+            case 'philips-hue-off':
+                update = { on: false };
+                break;
+            case 'philips-hue-brightness':
+                update = { on: true, brightness: params.brightness };
+                break;
+        }
+
+        if (update)
+            group.update(this.connection, update);
     }
 }

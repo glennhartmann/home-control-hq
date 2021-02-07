@@ -54,6 +54,7 @@ section li {
     padding: 0.5rem 1rem;
     border: 1px solid #455A64;
     border-radius: 4px;
+    cursor: pointer;
 }
 
 section li:not(:last-child) { margin-bottom: .5rem; }
