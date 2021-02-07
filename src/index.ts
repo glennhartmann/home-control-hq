@@ -29,4 +29,4 @@ const server = new Server({
 
 });
 
-server.initialize();
+server.initialize([ /* services */ ]);

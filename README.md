@@ -14,7 +14,7 @@ on the wall. They run [WebLayer](https://source.chromium.org/chromium/chromium/s
 based on Chromium 90. Each display controls a single room.
 
 ## Supported services
-_None yet_
+  * **Philips Hue**, through the [node-hue-api](https://www.npmjs.com/package/node-hue-api) library.
 
 # Installation, configuration and use
 

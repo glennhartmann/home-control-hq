@@ -6,6 +6,8 @@ import { Database } from './base/database';
 import { Environment } from './environment/environment';
 import { Logger } from './base/logger';
 import { Network, NetworkDelegate, NetworkOptions } from './network/network';
+import { ServiceDelegate, ServiceManager } from './services/service_manager';
+import { Service } from './services/service';
 
 // Options available to the server infrastructure.
 interface ServerOptions {
@@ -24,7 +26,7 @@ interface ServerOptions {
 
 // Main runtime of the server. Owns the network stack, services infrastructure and provides the
 // ability to communicate between them.
-export class Server implements NetworkDelegate {
+export class Server implements NetworkDelegate, ServiceDelegate {
     private options: ServerOptions;
 
     private database: Database;
@@ -32,6 +34,7 @@ export class Server implements NetworkDelegate {
 
     private environment?: Environment;
     private network: Network;
+    private services: ServiceManager;
 
     constructor(options: ServerOptions) {
         this.options = options;
@@ -42,19 +45,40 @@ export class Server implements NetworkDelegate {
         this.logger = logger;
 
         this.network = new Network(this, logger, options.network);
+        this.services = new ServiceManager(this, this.database, logger);
     }
 
     // Initializes the server, component by component.
-    async initialize() {
-        const environment = await Environment.fromFile(this.logger, this.options.environment);
-        if (!environment)
+    async initialize(services: Array<Service>) {
+        for (const service of services)
+            await this.services.addService(service);
+
+        if (!await this.reloadEnvironment())
             throw new Error(`Unable to load the home configuration, aborting.`);
 
-        this.environment = environment;
         this.network.listen();
+    }
+
+    // Asynchronously reloads the environment configuration for the server. The existing environment
+    // will only be overridden when successful, otherwise the request will be ignored.
+    async reloadEnvironment() {
+        const environment = await Environment.fromFile(this.logger, this.options.environment);
+        if (!environment)
+            return false;
+
+        this.environment = environment;
+        return true;
     }
 
     // ---------------------------------------------------------------------------------------------
     // NetworkDelegate interface:
     // ---------------------------------------------------------------------------------------------
+
+    // ...
+
+    // ---------------------------------------------------------------------------------------------
+    // ServiceDelegate interface:
+    // ---------------------------------------------------------------------------------------------
+
+    // ...
 }
