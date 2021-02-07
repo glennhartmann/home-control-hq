@@ -34,6 +34,18 @@ export class Connection {
         this.logger = logger;
     }
 
+    // Returns the API on which commands can be executed. The connection must be established, an
+    // exception will be thrown when this is not the case.
+    get api() {
+        if (!this.connection)
+            throw new Error(`The connection with the Philips Hue bridge must be initialized first`);
+
+        return this.connection;
+    }
+
+    // Returns whether the connection has been established.
+    get connected() { return !!this.connection; }
+
     // Initializes the connection with the Philips Hue bridge. Bridges will be discovered using UPNP
     // after which a connection will be attempted. Currently we only support a single bridge.
     async initialize(): Promise<boolean> {

@@ -13,8 +13,23 @@ The server runs on a Raspberry Pi 4, whereas the controllers are physical 1024x7
 on the wall. They run [WebLayer](https://source.chromium.org/chromium/chromium/src/+/master:weblayer/?ss=chromium)
 based on Chromium 90. Each display controls a single room.
 
-## Supported services
-  * **Philips Hue**, through the [node-hue-api](https://www.npmjs.com/package/node-hue-api) library.
+# Supported services
+
+## Philips Hue
+Controlling Philips Hue is enabled by the [node-hue-api](https://www.npmjs.com/package/node-hue-api)
+library. Each service entry controls either a named group or room.
+
+```json
+{
+    "label": "Lights",
+    "service": "Philips Hue",
+    "options": {
+        // Indicates the named room or zone to control. Lights and scenes that are part of this
+        // group are discovered and updated automatically.
+        "group": "Room name",
+    }
+}
+```
 
 # Installation, configuration and use
 
@@ -28,13 +43,7 @@ npm install
 ```json
 {
     "Room name": [
-        {
-            "label": "Lights",
-            "service": "Philips Hue",
-            "options": {
-                "room": "Room name"
-            }
-        }
+        // Service entries go here.
     ]
 }
 ```

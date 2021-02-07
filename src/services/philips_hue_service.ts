@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import { Connection } from './philips_hue/connection';
+import { Manager } from './philips_hue/manager';
 import { Server } from '../server';
 import { Service } from './service';
 
@@ -10,11 +11,11 @@ import { Service } from './service';
 // thus the ability to control lights and scenes in a house.
 export class PhilipsHueService implements Service {
     private connection: Connection;
-    private server: Server;
+    private manager: Manager;
 
     constructor(server: Server) {
         this.connection = new Connection(server.database, server.logger);
-        this.server = server;
+        this.manager = new Manager(this.connection, server.logger);
     }
 
     // Returns the identifier that is unique to this service.
@@ -26,11 +27,15 @@ export class PhilipsHueService implements Service {
         if (!await this.connection.initialize())
             return false;
 
+        await this.manager.update();
+
         return true;
     }
 
     // Validates whether the given |options| are valid for use with the Philips Hue service.
     async validate(options: object): Promise<boolean> {
+        // TODO: This should be more like "connect", so that the appropriate service -> display
+        // signals can be propagated as well.
         return true;
     }
 }
