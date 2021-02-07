@@ -32,7 +32,7 @@ export class Server implements NetworkDelegate, ServiceDelegate {
     private database: Database;
     private logger: Logger;
 
-    private environment?: Environment;
+    private environment: Environment;
     private network: Network;
     private services: ServiceManager;
 
@@ -44,6 +44,7 @@ export class Server implements NetworkDelegate, ServiceDelegate {
         this.database = new Database(logger, options.database);
         this.logger = logger;
 
+        this.environment = Environment.empty();
         this.network = new Network(this, logger, options.network);
         this.services = new ServiceManager(this, this.database, logger);
     }

@@ -24,6 +24,9 @@ type EnvironmentRoom = Record<string, Array<EnvironmentService>>;
 // Represents the environment (i.e. rooms) that the server controls. Initialized from a static
 // configuration file, and immutable thereafter.
 export class Environment {
+    // Returns an empty environment that contains no configuration of any sort.
+    static empty() { return new Environment(/* configuration= */ {}); }
+
     // Initializes the environment configuration based on the given |filename|. Errors will result
     // in a log message being shown and NULL being returned.
     static async fromFile(logger: Logger, filename: string) {
