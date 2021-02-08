@@ -12,6 +12,9 @@ import { Logger } from './base/logger';
 export interface NetworkDelegate {
     // Called when the given |message| has been received from one of the clients.
     onNetworkCommand: (command: string, params: object) => Promise<object | null>;
+
+    // Requests the server's environment configuration to be reloaded.
+    reloadEnvironment: () => Promise<boolean>;
 }
 
 // Dictionary containing the required options when initializing the network environment.
@@ -136,6 +139,9 @@ export class Network {
         switch (command) {
             case 'hello':
                 return { ip: request.ip };
+
+            case 'reload-environment':
+                return { success: await this.delegate.reloadEnvironment() };
         }
 
         return null;

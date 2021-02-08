@@ -60,9 +60,13 @@ export class Server implements NetworkDelegate {
         this.network.listen();
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // NetworkDelegate interface:
+    // ---------------------------------------------------------------------------------------------
+
     // Asynchronously reloads the environment configuration for the server. The existing environment
     // will only be overridden when successful, otherwise the request will be ignored.
-    async reloadEnvironment() {
+    async reloadEnvironment(): Promise<boolean> {
         const environment = await Environment.fromFile(this.logger, this.options.environment);
         if (!environment)
             return false;
@@ -73,10 +77,6 @@ export class Server implements NetworkDelegate {
         this.environment = environment;
         return true;
     }
-
-    // ---------------------------------------------------------------------------------------------
-    // NetworkDelegate interface:
-    // ---------------------------------------------------------------------------------------------
 
     // Called when the given |command| has been received from a client. Environment and service
     // commands will be tried first, after which a series of utility commands are handled locally.
