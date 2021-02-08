@@ -6,12 +6,12 @@ import express, { NextFunction, Request, Response } from 'express';
 import expressWs, { Application } from 'express-ws';
 import * as ws from 'ws';
 
-import { Logger } from '../base/logger';
+import { Logger } from './base/logger';
 
 // The delegate that defines interaction of the network stack with the component that owns it.
 export interface NetworkDelegate {
     // Called when the given |message| has been received from one of the clients.
-    onNetworkCommand: (command: string, params: object) => Promise<object>;
+    onNetworkCommand: (command: string, params: object) => Promise<object | null>;
 }
 
 // Dictionary containing the required options when initializing the network environment.
@@ -75,9 +75,6 @@ export class Network {
     onNetworkConnection(webSocket: ws, request: Request, next: NextFunction) {
         const prefix = `[WS:${this.clientId++}]`;
 
-        webSocket.on('close', () =>
-            this.logger.info(`${prefix} Connection has been closed.`));
-
         webSocket.on('open', () =>
             this.logger.info(`${prefix} Connection has been opened by ${request.ip}.`));
 
@@ -100,29 +97,48 @@ export class Network {
                 ({ command, messageId, ...parameters } = message);
 
             } catch (exception) {
-                this.logger.error(`${prefix} Received an invalid message:`, exception);
+                this.logger.error(`${prefix} Received an message with invalid syntax:`, exception);
 
                 webSocket.close();
                 return;
             }
 
+            let response: object | null = {};
             try {
-                const response = {
-                    ...await this.delegate.onNetworkCommand(command!, parameters),
-                    messageId,
-                };
+                response = await this.handleInternalCommand(request, command!) ??
+                           await this.delegate.onNetworkCommand(command!, parameters);
 
-                webSocket.send(JSON.stringify(response));
+                if (response === null)
+                    throw new Error(`${prefix} Received an invalid command: ${command}`);
 
             } catch (exception) {
                 this.logger.warn(`${prefix} Unable to respond to a command message:`, exception);
 
-                webSocket.send(JSON.stringify({
-                    error: exception.message,
-                    messageId,
-                }));
+                // Respond with the error message that was included in the exception.
+                response = { error: exception.message };
             }
+
+            webSocket.send(JSON.stringify({
+                ...response,
+                messageId,
+            }));
         });
+
+        webSocket.on('close', () =>
+            this.logger.info(`${prefix} Connection has been closed.`));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+
+    // Manages commands internal to the server, which are not related with either the environment or
+    // one of the services registered with the server.
+    async handleInternalCommand(request: Request, command: string): Promise<object | null> {
+        switch (command) {
+            case 'hello':
+                return { ip: request.ip };
+        }
+
+        return null;
     }
 
     // ---------------------------------------------------------------------------------------------

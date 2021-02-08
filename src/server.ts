@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { Client } from './network/client';
 import { Database } from './base/database';
 import { Environment } from './environment/environment';
 import { Logger } from './base/logger';
-import { Network, NetworkDelegate, NetworkOptions } from './network/network';
+import { Network, NetworkDelegate, NetworkOptions } from './network';
 import { ServiceManager } from './services/service_manager';
 import { Service } from './services/service';
 
@@ -79,9 +78,9 @@ export class Server implements NetworkDelegate {
     // NetworkDelegate interface:
     // ---------------------------------------------------------------------------------------------
 
-    // Called when the given |command| has been received from the |client|. Environment and service
+    // Called when the given |command| has been received from a client. Environment and service
     // commands will be tried first, after which a series of utility commands are handled locally.
-    async onNetworkCommand(client: Client, command: string, parameters: any): Promise<object> {
+    async onNetworkCommand(command: string, parameters: any): Promise<object | null> {
         const serviceCommandResult =
             await this.services.getCommandDispatcher().dispatchCommand(command, parameters);
 
@@ -89,22 +88,15 @@ export class Server implements NetworkDelegate {
             return serviceCommandResult;
 
         switch (command) {
-            case 'hello':
-                return { ip: client.clientIp };
-
             // Temporary commands to make the debug page somewhat work.
             case 'environment-room-list':
                 return { rooms: [ ...this.environment.getRoomNames() ].sort() };
 
             case 'environment-service-list':
                 return { services: [ ...this.environment.getRoomServices(parameters.room) ] };
-
-            default:
-                this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);
-                break;
         }
 
-        return {};
+        return null;
     }
 
     // ---------------------------------------------------------------------------------------------
