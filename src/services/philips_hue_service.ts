@@ -6,7 +6,7 @@ import { Connection } from './philips_hue/connection';
 import { LightGroup, LightUpdate } from './philips_hue/light_group';
 import { Manager } from './philips_hue/manager';
 import { Server } from '../server';
-import { Service, ServiceCommand } from './service';
+import { Service, ServiceCommand } from '../service';
 
 // Implements the Philips Hue service, which provides the ability to interact with Philips Hue and
 // thus the ability to control lights and scenes in a house.

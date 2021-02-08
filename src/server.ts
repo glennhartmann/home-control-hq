@@ -6,8 +6,8 @@ import { Database } from './base/database';
 import { Environment } from './environment';
 import { Logger } from './base/logger';
 import { Network, NetworkDelegate, NetworkOptions } from './network';
-import { ServiceManager } from './services/service_manager';
-import { Service } from './services/service';
+import { ServiceManager } from './service_manager';
+import { Service } from './service';
 
 // Options available to the server infrastructure.
 interface ServerOptions {
@@ -82,6 +82,6 @@ export class Server implements NetworkDelegate {
     // commands will be tried first, after which a series of utility commands are handled locally.
     async onNetworkCommand(command: string, parameters: any): Promise<object | null> {
         return await this.environment.dispatchCommand(command, parameters) ||
-               await this.services.getCommandDispatcher().dispatchCommand(command, parameters);
+               await this.services.dispatchCommand(command, parameters);
     }
 }
