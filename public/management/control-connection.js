@@ -85,7 +85,7 @@ export class ControlConnection extends EventTarget {
     // Called when a connection has been established. We send a "hello" message to which the hub
     // will respond with some basic information about the current environment.
     onOpen() {
-        this.sendInternal({ command: 'hello' }).then(response => {
+        this.sendInternal({ command: 'hello' }).then(() => {
             if (this.#state !== ControlConnection.STATE_CONNECTING)
                 return;  // unexpected state
 
@@ -130,8 +130,10 @@ export class ControlConnection extends EventTarget {
         if (this.#state === ControlConnection.STATE_DISCONNECTED)
             return;
 
+        if (this.#state === ControlConnection.STATE_CONNECTED)
+            this.dispatchEvent(new CustomEvent('disconnect'));
+
         this.#state = ControlConnection.STATE_DISCONNECTED;
-        this.dispatchEvent(new CustomEvent('disconnect'));
 
         // Automatically attempt to reconnect to the hub after a defined number of milliseconds.
         setTimeout(ControlConnection.prototype.connect.bind(this), kReconnectionTimeoutMs);
