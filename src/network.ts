@@ -6,13 +6,12 @@ import express, { NextFunction, Request, Response } from 'express';
 import expressWs, { Application } from 'express-ws';
 import * as ws from 'ws';
 
-import { Client } from './client';
 import { Logger } from '../base/logger';
 
 // The delegate that defines interaction of the network stack with the component that owns it.
 export interface NetworkDelegate {
-    // Called when the given |message| has been received from the |client|.
-    onNetworkCommand: (client: Client, command: string, params: object) => Promise<object>;
+    // Called when the given |message| has been received from one of the clients.
+    onNetworkCommand: (command: string, params: object) => Promise<object>;
 }
 
 // Dictionary containing the required options when initializing the network environment.
@@ -43,7 +42,6 @@ export class Network {
     private options: NetworkOptions;
 
     private clientId: number;
-    private clients: Set<Client>;
     private server: Application;
 
     constructor(delegate: NetworkDelegate, logger: Logger, options: NetworkOptions) {
@@ -52,7 +50,6 @@ export class Network {
         this.options = options;
 
         this.clientId = 1;
-        this.clients = new Set();
 
         this.server = expressWs(express()).app;
 
@@ -76,8 +73,7 @@ export class Network {
     // Called when a WebSocket connection with the `/control` endpoint has been initiated. Events
     // will be displayed in the console, and messages will be routed to the networking delegate.
     onNetworkConnection(webSocket: ws, request: Request, next: NextFunction) {
-        const client = new Client(this.clientId++, request.ip, webSocket);
-        const prefix = `[WS:${client.clientId}]`;
+        const prefix = `[WS:${this.clientId++}]`;
 
         webSocket.on('close', () =>
             this.logger.info(`${prefix} Connection has been closed.`));
@@ -112,7 +108,7 @@ export class Network {
 
             try {
                 const response = {
-                    ...await this.delegate.onNetworkCommand(client, command!, parameters),
+                    ...await this.delegate.onNetworkCommand(command!, parameters),
                     messageId,
                 };
 
@@ -127,8 +123,6 @@ export class Network {
                 }));
             }
         });
-
-        this.clients.add(client);
     }
 
     // ---------------------------------------------------------------------------------------------
