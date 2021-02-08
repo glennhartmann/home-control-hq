@@ -41,6 +41,8 @@ The following commands are supported by the Philips Hue service:
 There are a number of supported commands that exist purely to introspect or instruct the server
 infrastructure.
 
+  * **environment-rooms** (_no paramters_): Retrieves the list of defined rooms.
+  * **environment-services** (`room`): Retrieves the list of defined services for a room.
   * **hello** (_no parameters_): Client hello.
 
 # Installation, configuration and use

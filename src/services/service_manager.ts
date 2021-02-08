@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import { Database } from '../base/database';
-import { Environment } from '../environment/environment';
+import { Environment } from '../environment';
 import { Logger } from '../base/logger';
 import { Service } from './service';
 import { ServiceCommandDispatcher } from './service_command_dispatcher';

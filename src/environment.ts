@@ -4,7 +4,7 @@
 
 import { promises as fs } from 'fs';
 
-import { Logger } from '../base/logger';
+import { Logger } from './base/logger';
 
 // Dictionary definition for the immutable description of a service.
 interface EnvironmentService {
@@ -80,6 +80,21 @@ export class Environment {
     }
 
     getRooms() { return Object.entries(this.rooms); }
-    getRoomNames() { return Object.keys(this.rooms); }
-    getRoomServices(name: string) { return this.rooms[name]; }
+
+    // Dispatcher for WebSocket commands related to the environment the home control system is
+    // operating under. These relate to introspection of the state.
+    async dispatchCommand(command: string, parameters: any): Promise<object | null> {
+        switch (command) {
+            case 'environment-rooms':
+                return { rooms: [ ...Object.keys(this.rooms).sort() ] };
+
+            case 'environment-services':
+                if (!this.rooms.hasOwnProperty(parameters.room))
+                    throw new Error(`Cannot display services for invalid room: ${parameters.room}`);
+
+                return { services: [ ...this.rooms[parameters.room] ] };
+        }
+
+        return null;
+    }
 }

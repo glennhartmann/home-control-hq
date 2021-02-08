@@ -43,7 +43,7 @@ export class DebugInterface {
     // the rooms can be clicked on to reveal a list of the available services for that room.
     async composeRoomList() {
         const container = this.#elements.rooms;
-        const { rooms } = await this.#connection.send({ command: 'environment-room-list' });
+        const { rooms } = await this.#connection.send({ command: 'environment-rooms' });
 
         while (container.firstChild)
             container.removeChild(container.firstChild);
@@ -72,7 +72,7 @@ export class DebugInterface {
 
         const container = this.#elements.services;
         const { services } = await this.#connection.send({
-            command: 'environment-service-list',
+            command: 'environment-services',
             room,
         });
 
