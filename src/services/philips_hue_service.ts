@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import { Connection } from './philips_hue/connection';
-import { LightUpdate } from './philips_hue/light_group';
+import { LightGroup, LightUpdate } from './philips_hue/light_group';
 import { Manager } from './philips_hue/manager';
 import { Server } from '../server';
-import { Service } from './service';
+import { Service, ServiceCommand } from './service';
 
 // Implements the Philips Hue service, which provides the ability to interact with Philips Hue and
 // thus the ability to control lights and scenes in a house.
@@ -20,7 +20,41 @@ export class PhilipsHueService implements Service {
     }
 
     // Returns the identifier that is unique to this service.
-    getIdentifier() { return 'Philips Hue'; }
+    getIdentifier(): string { return 'Philips Hue'; }
+
+    // Returns an array of the commands supported by the Philips Hue service. Routing and validation
+    // will be done centrally by the command dispatcher.
+    getCommands(): Array<ServiceCommand> {
+        return [
+            {
+                command: 'philips-hue-power',
+                description: 'Toggle power to the lights in a Philips Hue light group',
+                handler: PhilipsHueService.prototype.handlePowerCommand.bind(this),
+                parameters: [
+                    { name: 'group', type: 'string' },
+                    { name: 'on', type: 'boolean' },
+                ]
+            },
+            {
+                command: 'philips-hue-brightness',
+                description: 'Change the brightness of a Philips Hue light group; [0-100)',
+                handler: PhilipsHueService.prototype.handleBrightnessCommand.bind(this),
+                parameters: [
+                    { name: 'group', type: 'string' },
+                    { name: 'brightness', type: 'number' },
+                ]
+            },
+            {
+                command: 'philips-hue-scene',
+                description: 'Change the scene applied to a Philips Hue light group',
+                handler: PhilipsHueService.prototype.handleSceneCommand.bind(this),
+                parameters: [
+                    { name: 'group', type: 'string' },
+                    { name: 'scene', type: 'string' },
+                ]
+            },
+        ];
+    }
 
     // Initializes the Philips Hue service. This means that we ensure that a connection with the
     // Philips Hue Hub can be established, and initial light configuration can be retrieved.
@@ -40,26 +74,53 @@ export class PhilipsHueService implements Service {
         return true;
     }
 
-    // Called when the given |command| has been issued for a Philips Hue service.
-    async issueCommand(command: string, params: any) {
-        const group = this.manager.getGroup(params.options.room);
-        if (!group)
-            return;
+    // ---------------------------------------------------------------------------------------------
+    // Service command handlers
+    // ---------------------------------------------------------------------------------------------
 
-        let update: LightUpdate | undefined;
-        switch (command) {
-            case 'philips-hue-on':
-                update = { on: true };
-                break;
-            case 'philips-hue-off':
-                update = { on: false };
-                break;
-            case 'philips-hue-brightness':
-                update = { on: true, brightness: params.brightness };
-                break;
-        }
+    // Change the brightness of a Philips Hue light group.
+    async handleBrightnessCommand(group: string, brightness: number): Promise<object> {
+        const lightGroup = this.findLightGroupOrThrow(group);
+        await lightGroup.update(this.connection, {
+            on: true,
+            brightness,
+        });
 
-        if (update)
-            group.update(this.connection, update);
+        return {};
+    }
+
+    // Toggle power to the lights in a Philips Hue light group.
+    async handlePowerCommand(group: string, on: boolean): Promise<object> {
+        const lightGroup = this.findLightGroupOrThrow(group);
+        await lightGroup.update(this.connection, {
+            on,
+        });
+
+        return {};
+    }
+
+    // Change the scene applied to a Philips Hue light group.
+    async handleSceneCommand(group: string, scene: string): Promise<object> {
+        const lightGroup = this.findLightGroupOrThrow(group);
+        await lightGroup.update(this.connection, {
+            on: true,  // TODO: Is this required? Would it force all lights in a gruop to be on?
+            scene,
+        });
+
+        return {};
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Utility functions
+    // ---------------------------------------------------------------------------------------------
+
+    // Finds the light group identified by the |group| name, or throws an exception when it cannot
+    // be found in the configuration. That might indicate that changes have just been made.
+    findLightGroupOrThrow(group: string): LightGroup {
+        const lightGroup = this.manager.getGroup(group);
+        if (!lightGroup)
+            throw new Error(`The light group named "${group}" is not known to Philips Hue.`);
+
+        return lightGroup;
     }
 }

@@ -7,7 +7,7 @@ import { Database } from './base/database';
 import { Environment } from './environment/environment';
 import { Logger } from './base/logger';
 import { Network, NetworkDelegate, NetworkOptions } from './network/network';
-import { ServiceDelegate, ServiceManager } from './services/service_manager';
+import { ServiceManager } from './services/service_manager';
 import { Service } from './services/service';
 
 // Options available to the server infrastructure.
@@ -27,7 +27,7 @@ interface ServerOptions {
 
 // Main runtime of the server. Owns the network stack, services infrastructure and provides the
 // ability to communicate between them.
-export class Server implements NetworkDelegate, ServiceDelegate {
+export class Server implements NetworkDelegate {
     private options: ServerOptions;
 
     public database: Database;
@@ -47,7 +47,7 @@ export class Server implements NetworkDelegate, ServiceDelegate {
 
         this.environment = Environment.empty();
         this.network = new Network(this, logger, options.network);
-        this.services = new ServiceManager(this, this.database, logger);
+        this.services = new ServiceManager(this.database, logger);
     }
 
     // Initializes the server, component by component.
@@ -79,8 +79,15 @@ export class Server implements NetworkDelegate, ServiceDelegate {
     // NetworkDelegate interface:
     // ---------------------------------------------------------------------------------------------
 
-    // Called when the given |command| has been received from the |client|.
-    async onNetworkCommand(client: Client, command: string, params: any): Promise<object> {
+    // Called when the given |command| has been received from the |client|. Environment and service
+    // commands will be tried first, after which a series of utility commands are handled locally.
+    async onNetworkCommand(client: Client, command: string, parameters: any): Promise<object> {
+        const serviceCommandResult =
+            await this.services.getCommandDispatcher().dispatchCommand(command, parameters);
+
+        if (serviceCommandResult !== null)
+            return serviceCommandResult;
+
         switch (command) {
             case 'hello':
                 return { ip: client.clientIp };
@@ -90,17 +97,7 @@ export class Server implements NetworkDelegate, ServiceDelegate {
                 return { rooms: [ ...this.environment.getRoomNames() ].sort() };
 
             case 'environment-service-list':
-                return { services: [ ...this.environment.getRoomServices(params.room) ] };
-
-            case 'philips-hue-on':
-            case 'philips-hue-off':
-            case 'philips-hue-brightness': {
-                const service = this.services.getService(params.service) as any;
-                if (service)
-                    await service.issueCommand(command, params);
-
-                break;
-            }
+                return { services: [ ...this.environment.getRoomServices(parameters.room) ] };
 
             default:
                 this.logger.warn(`Unrecognised command from ${client.clientIp}: ${command}...`);

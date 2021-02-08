@@ -120,6 +120,11 @@ export class Network {
 
             } catch (exception) {
                 this.logger.warn(`${prefix} Unable to respond to a command message:`, exception);
+
+                webSocket.send(JSON.stringify({
+                    error: exception.message,
+                    messageId,
+                }));
             }
         });
 

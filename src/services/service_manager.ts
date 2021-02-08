@@ -6,31 +6,27 @@ import { Database } from '../base/database';
 import { Environment } from '../environment/environment';
 import { Logger } from '../base/logger';
 import { Service } from './service';
-
-// The delegate that defines how services can interact with the server.
-export interface ServiceDelegate {
-
-}
+import { ServiceCommandDispatcher } from './service_command_dispatcher';
 
 // Manager for the services that exist within the home control system. While the functionality will
 // be provided by NPM packages, the manager serves as a registry and mediator.
 export class ServiceManager {
-    private delegate: ServiceDelegate;
-
     private database: Database;
     private logger: Logger;
+
+    private serviceCommandDispatcher: ServiceCommandDispatcher;
     private services: Map<string, Service>;
 
-    constructor(delegate: ServiceDelegate, database: Database, logger: Logger) {
-        this.delegate = delegate;
-
+    constructor(database: Database, logger: Logger) {
         this.database = database;
         this.logger = logger;
+
+        this.serviceCommandDispatcher = new ServiceCommandDispatcher();
         this.services = new Map();
     }
 
-    // TODO: Remove this once a Client can connect to one or more services.
-    getService(name: string) { return this.services.get(name); }
+    // Returns the service command dispatcher, allowing WebSocket commands to be dispatched.
+    getCommandDispatcher() { return this.serviceCommandDispatcher; }
 
     // Adds the given |service| to the manager. It will be initialized immediately after being added
     // which could take an arbitrary amount of time, and might require human intervention.
@@ -42,6 +38,7 @@ export class ServiceManager {
             return;
         }
 
+        this.serviceCommandDispatcher.registerServiceCommands(service);
         this.services.set(identifier, service);
     }
 

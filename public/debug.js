@@ -102,6 +102,7 @@ export class DebugInterface {
 
         event.target.classList.add('selected');
 
+        const group = options.room;
         const container = this.#elements.controls;
 
         while (container.firstChild)
@@ -110,8 +111,8 @@ export class DebugInterface {
         // TODO: We hard-code this for Philips Hue controls for now. The server will likely need
         // some form of capabilities sharing to automate this across services.
         const controls = {
-            'Turn on': { command: 'philips-hue-on' },
-            'Turn off': { command: 'philips-hue-off' },
+            'Turn on': { command: 'philips-hue-power', on: true },
+            'Turn off': { command: 'philips-hue-power', on: false },
             'Brightness 25%': { command: 'philips-hue-brightness', brightness: 63 },
             'Brightness 100%': { command: 'philips-hue-brightness', brightness: 191 },
         };
@@ -122,8 +123,7 @@ export class DebugInterface {
 
             controlElement.innerText = label;
             controlElement.addEventListener(
-                'click', DebugInterface.prototype.issueCommand.bind(
-                    this, { room, service, options, ...command }));
+                'click', DebugInterface.prototype.issueCommand.bind(this, { ...command, group }));
 
             listElement.appendChild(controlElement);
         }
