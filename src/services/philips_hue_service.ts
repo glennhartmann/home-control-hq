@@ -38,7 +38,7 @@ export class PhilipsHueService implements Service {
             },
             {
                 command: 'philips-hue-brightness',
-                description: 'Change the brightness of a Philips Hue light group; [0-100)',
+                description: 'Change the brightness of a Philips Hue light group; [0-254)',
                 handler: PhilipsHueService.prototype.handleBrightnessCommand.bind(this),
                 parameters: [
                     { name: 'group', type: 'string' },
