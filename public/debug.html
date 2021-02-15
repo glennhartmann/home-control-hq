@@ -20,10 +20,18 @@
       <i>Select a device first.</i>
     </section>
     <footer id="console"></footer>
+    <dialog id="configuration">
+      <h1>command-name</h1>
+      <p>Command description.</p>
+      <ul></ul>
+      <button>Issue</button>
+      <button>Close</button>
+    </dialog>
     <script type="module">
       import { DebugInterface } from './debug.js';
 
       new DebugInterface({
+          configuration: document.getElementById('configuration'),
           console: document.getElementById('console'),
           controls: document.getElementById('controls'),
           rooms: document.getElementById('rooms'),

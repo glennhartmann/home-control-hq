@@ -60,6 +60,22 @@ section li {
 section li:not(:last-child) { margin-bottom: .5rem; }
 section li.selected { background-color: #B0BEC5; font-weight: bold; }
 
+/** Dialog styling **/
+
+dialog {
+    background-color: #B0BEC5;
+    border: 4px solid #455A64;
+    border-radius: 4px;
+    padding: 0 2rem 1.5rem 2rem;
+}
+
+dialog label {
+    display: inline-block;
+    width: 35%;
+}
+
+dialog input[type="checkbox"] { margin-left: 0px; }
+
 /** Footer styling **/
 
 footer {

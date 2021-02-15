@@ -85,8 +85,7 @@ export class DebugInterface {
 
             serviceElement.innerText = label;
             serviceElement.addEventListener(
-                'click', DebugInterface.prototype.composeControlList.bind(
-                    this, room, service, options));
+                'click', DebugInterface.prototype.composeCommandList.bind(this, service, options));
 
             listElement.appendChild(serviceElement);
         }
@@ -94,42 +93,134 @@ export class DebugInterface {
         container.appendChild(listElement);
     }
 
-    // Composes the list of controls available for the given |service| in the |room|. The |options|
-    // are treated as opaque for the debug page, and will just be passed back to the server.
-    async composeControlList(room, service, options, event) {
+    // Composes the list of commands available for the given |service| in a room. The |options| are
+    // treated as opaque for the debug page, and will just be passed back to the server.
+    async composeCommandList(service, options, event) {
         for (const element of this.#elements.services.querySelectorAll('li.selected'))
             element.classList.remove('selected');
 
         event.target.classList.add('selected');
 
-        const group = options.room;
         const container = this.#elements.controls;
+        const { commands } = await this.#connection.send({
+            command: 'service-commands',
+            service,
+        });
 
         while (container.firstChild)
             container.removeChild(container.firstChild);
 
-        // TODO: We hard-code this for Philips Hue controls for now. The server will likely need
-        // some form of capabilities sharing to automate this across services.
-        const controls = {
-            'Turn on': { command: 'philips-hue-power', on: true },
-            'Turn off': { command: 'philips-hue-power', on: false },
-            'Brightness 25%': { command: 'philips-hue-brightness', brightness: 63 },
-            'Brightness 100%': { command: 'philips-hue-brightness', brightness: 191 },
-            'State': { command: 'philips-hue-state' },
-        };
-
         const listElement = document.createElement('ul');
-        for (const [ label, command ] of Object.entries(controls)) {
-            const controlElement = document.createElement('li');
+        for (const command of commands) {
+            const commandElement = document.createElement('li');
 
-            controlElement.innerText = label;
-            controlElement.addEventListener(
-                'click', DebugInterface.prototype.issueCommand.bind(this, { ...command, group }));
+            commandElement.innerText = command.command;
+            commandElement.addEventListener(
+                'click', DebugInterface.prototype.composeConfigureCommand.bind(
+                    this, options, command));
 
-            listElement.appendChild(controlElement);
+            listElement.appendChild(commandElement);
         }
 
         container.appendChild(listElement);
+    }
+
+    // Composes a dialog that allows the |command| to be configured, depending on the parameter
+    // information that has been given by the server.
+    async composeConfigureCommand(options, command) {
+        const dialogElement = this.#elements.configuration;
+
+        dialogElement.querySelector('h1').innerText = command.command;
+        dialogElement.querySelector('p').innerText = command.description;
+
+        const parametersElement = dialogElement.querySelector('ul');
+        const parametersGetters = [];
+
+        while (parametersElement.firstChild)
+            parametersElement.removeChild(parametersElement.firstChild);
+
+        for (const parameter of command.parameters) {
+            parametersGetters.push(
+                this.composeCommandParameter(parametersElement, options, parameter));
+        }
+
+        const existingIssueElement = dialogElement.querySelector('button:first-of-type');
+        const issueElement = document.createElement('button');
+
+        issueElement.innerText = existingIssueElement.innerText;
+        issueElement.addEventListener('click', async() => {
+            let parameters = {};
+            for (const getter of parametersGetters)
+                parameters = getter(parameters);
+
+            await this.issueCommand({ command: command.command, ...parameters });
+
+            dialogElement.close();
+        });
+
+        existingIssueElement.replaceWith(issueElement);
+
+        const closeElement = dialogElement.querySelector('button:last-of-type');
+        closeElement.addEventListener('click', () => {
+            dialogElement.close();
+        });
+
+        // Show the <dialog> element as a modal, creating a gradient over the background.
+        dialogElement.showModal();
+    }
+
+    // Composes an individual parameter field for one of the commands, which will be appended to
+    // the given |container|. A function will be returned to read the parameter's value.
+    composeCommandParameter(container, options, parameter) {
+        const listElement = document.createElement('li');
+        const labelElement = document.createElement('label');
+        let valueElement = document.createElement('input');
+
+        labelElement.innerText = parameter.name;
+
+        switch (parameter.type) {
+            case 'boolean':
+                valueElement.type = 'checkbox';
+                break;
+
+            case 'number':
+                valueElement.type = 'number';
+                valueElement.value = 0;
+                break;
+
+            case 'string':
+                valueElement.type = 'text';
+
+                if (options.hasOwnProperty(parameter.name))
+                    valueElement.value = options[parameter.name];
+
+                break;
+        }
+
+        listElement.appendChild(labelElement);
+        listElement.appendChild(valueElement);
+
+        container.appendChild(listElement);
+
+        // Returns a function that builds the options dictionary, through which the server is able
+        // to actually execute on the command.
+        return (parameters) => {
+            switch (parameter.type) {
+                case 'boolean':
+                    parameters[parameter.name] = !!valueElement.checked;
+                    break;
+
+                case 'number':
+                    parameters[parameter.name] = parseInt(valueElement.value, 10);
+                    break;
+
+                case 'string':
+                    parameters[parameter.name] = valueElement.value;
+                    break;
+            }
+
+            return parameters;
+        };
     }
 
     // Issues the given |command| to the server. No visual feedback will be given for now.

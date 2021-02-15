@@ -103,8 +103,10 @@ export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver
     async dispatchCommand(client: NetworkClient, command: string, parameters: any):
             Promise<object | null> {
         const serviceCommand = this.commands.get(command);
-        if (!serviceCommand)
-            return null;
+        if (!serviceCommand) {
+            return command === 'service-commands' ? this.handleServiceCommands(parameters.service)
+                                                  : null;
+        }
 
         const parameterArray: Array<any> = [];
         for (const description of serviceCommand.parameters) {
@@ -169,6 +171,24 @@ export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver
         }
 
         return result;
+    }
+
+    // Enables introspection of the commands exposed by a service. Mainly used by the debugging page
+    // to quickly and easily give full control over the entire server.
+    async handleServiceCommands(service: string): Promise<object> {
+        const commands = [];
+        for (const command of this.commands.values()) {
+            if (command.service !== service)
+                continue;  // different service
+
+            commands.push({
+                command: command.command,
+                description: command.description,
+                parameters: command.parameters,
+            });
+        }
+
+        return { commands };
     }
 
     // ---------------------------------------------------------------------------------------------

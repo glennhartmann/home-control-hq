@@ -46,6 +46,7 @@ infrastructure.
   * **environment-services** (`room`): Retrieves the list of defined services for a room.
   * **hello** (_no parameters_): Client hello.
   * **reload-environment** (_no parameters_): Reloads the server's environment configuration.
+  * **service-commands** (`service`): Retrieves the list of defined commands for a service.
 
 # Installation, configuration and use
 
