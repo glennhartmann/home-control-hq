@@ -7,11 +7,12 @@ import expressWs, { Application } from 'express-ws';
 import * as ws from 'ws';
 
 import { Logger } from './base/logger';
+import { NetworkClient } from './network_client';
 
 // The delegate that defines interaction of the network stack with the component that owns it.
 export interface NetworkDelegate {
     // Called when the given |message| has been received from one of the clients.
-    onNetworkCommand: (command: string, params: object) => Promise<object | null>;
+    onNetworkCommand: (client: NetworkClient, command: string, params: object) => Promise<object | null>;
 
     // Requests the server's environment configuration to be reloaded.
     reloadEnvironment: () => Promise<boolean>;
@@ -44,15 +45,12 @@ export class Network {
     private logger: Logger;
     private options: NetworkOptions;
 
-    private clientId: number;
     private server: Application;
 
     constructor(delegate: NetworkDelegate, logger: Logger, options: NetworkOptions) {
         this.delegate = delegate;
         this.logger = logger;
         this.options = options;
-
-        this.clientId = 1;
 
         this.server = expressWs(express()).app;
 
@@ -76,10 +74,10 @@ export class Network {
     // Called when a WebSocket connection with the `/control` endpoint has been initiated. Events
     // will be displayed in the console, and messages will be routed to the networking delegate.
     onNetworkConnection(webSocket: ws, request: Request, next: NextFunction) {
-        const prefix = `[WS:${this.clientId++}]`;
+        const client = new NetworkClient(webSocket, request.ip);
 
         webSocket.on('open', () =>
-            this.logger.info(`${prefix} Connection has been opened by ${request.ip}.`));
+            this.logger.info(`${client} Connection has been opened by ${request.ip}.`));
 
         webSocket.on('message', async messageData => {
             let command: string | undefined;
@@ -100,7 +98,7 @@ export class Network {
                 ({ command, messageId, ...parameters } = message);
 
             } catch (exception) {
-                this.logger.error(`${prefix} Received an message with invalid syntax:`, exception);
+                this.logger.error(`${client} Received an message with invalid syntax:`, exception);
 
                 webSocket.close();
                 return;
@@ -109,13 +107,13 @@ export class Network {
             let response: object | null = {};
             try {
                 response = await this.handleInternalCommand(request, command!) ??
-                           await this.delegate.onNetworkCommand(command!, parameters);
+                           await this.delegate.onNetworkCommand(client, command!, parameters);
 
                 if (response === null)
-                    throw new Error(`${prefix} Received an invalid command: ${command}`);
+                    throw new Error(`${client} Received an invalid command: ${command}`);
 
             } catch (exception) {
-                this.logger.warn(`${prefix} Unable to respond to a command message:`, exception);
+                this.logger.warn(`${client} Unable to respond to a command message:`, exception);
 
                 // Respond with the error message that was included in the exception.
                 response = { error: exception.message };
@@ -128,7 +126,7 @@ export class Network {
         });
 
         webSocket.on('close', () =>
-            this.logger.info(`${prefix} Connection has been closed.`));
+            this.logger.info(`${client} Connection has been closed.`));
     }
 
     // ---------------------------------------------------------------------------------------------

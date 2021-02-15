@@ -5,6 +5,7 @@
 import { Database } from './base/database';
 import { Environment } from './environment';
 import { Logger } from './base/logger';
+import { NetworkClient } from './network_client';
 import { Network, NetworkDelegate, NetworkOptions } from './network';
 import { ServiceManager } from './service_manager';
 import { Service } from './service';
@@ -46,7 +47,7 @@ export class Server implements NetworkDelegate {
 
         this.environment = Environment.empty();
         this.network = new Network(this, logger, options.network);
-        this.services = new ServiceManager(this.database, logger);
+        this.services = new ServiceManager(logger);
     }
 
     // Initializes the server, component by component.
@@ -80,8 +81,9 @@ export class Server implements NetworkDelegate {
 
     // Called when the given |command| has been received from a client. Environment and service
     // commands will be tried first, after which a series of utility commands are handled locally.
-    async onNetworkCommand(command: string, parameters: any): Promise<object | null> {
+    async onNetworkCommand(client: NetworkClient, command: string, parameters: any):
+            Promise<object | null> {
         return await this.environment.dispatchCommand(command, parameters) ||
-               await this.services.dispatchCommand(command, parameters);
+               await this.services.dispatchCommand(client, command, parameters);
     }
 }

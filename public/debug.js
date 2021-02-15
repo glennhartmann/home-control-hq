@@ -115,6 +115,7 @@ export class DebugInterface {
             'Turn off': { command: 'philips-hue-power', on: false },
             'Brightness 25%': { command: 'philips-hue-brightness', brightness: 63 },
             'Brightness 100%': { command: 'philips-hue-brightness', brightness: 191 },
+            'State': { command: 'philips-hue-state' },
         };
 
         const listElement = document.createElement('ul');

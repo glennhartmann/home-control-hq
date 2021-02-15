@@ -2,29 +2,44 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { Database } from './base/database';
+import { default as equal } from 'deep-equal';
+
 import { Environment } from './environment';
 import { Logger } from './base/logger';
-import { Service, ServiceCommand } from './service';
+import { NetworkClient, NetworkClientObserver } from './network_client';
+import { Service, ServiceBroadcaster, ServiceCommand, ServiceRoutine } from './service';
 
 // Meta information stored by the command dispatcher. Limited to the textual service identifier.
 type ServiceCommandMeta = { service: string; };
 
+// Information retained for a command subscription, to power the server's targetted broadcasts.
+interface SubscriptionInfo {
+    // Set of clients who have subscribed for this particular broadcast.
+    clients: Set<NetworkClient>;
+
+    // Name of the command that the subscription is for.
+    command: string;
+
+    // Parameters that are key to targetted distribution of broadcasts.
+    parameters: Array<any>;
+}
+
+// Maximum number of seconds at which service routines are able to execute.
+const kMaximumIntervalSeconds = /* one day= */ 86400;
+
 // Manager for the services that exist within the home control system. While the functionality will
 // be provided by NPM packages, the manager serves as a registry and mediator.
-export class ServiceManager {
-    private database: Database;
+export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver {
     private logger: Logger;
 
     private commands: Map<string, ServiceCommand & ServiceCommandMeta> = new Map();
     private services: Map<string, Service>;
+    private subscriptions: Array<SubscriptionInfo>;
 
-    constructor(database: Database, logger: Logger) {
-        this.database = database;
+    constructor(logger: Logger) {
         this.logger = logger;
-
-        // TODO: Register internal commands in |this.commands|.
         this.services = new Map();
+        this.subscriptions = [];
     }
 
     // Adds the given |service| to the manager. It will be initialized immediately after being added
@@ -32,18 +47,29 @@ export class ServiceManager {
     async addService(service: Service) {
         const identifier = service.getIdentifier();
 
-        if (!await service.initialize()) {
+        if (!await service.initialize(this)) {
             this.logger.warn(`Unable to initialize ${identifier}, skipping...`);
             return;
         }
 
         this.services.set(identifier, service);
 
+        // Register each of the control connection commands supported by the service.
         for (const command of service.getCommands()) {
             this.commands.set(command.command, {
                 service: service.getIdentifier(),
                 ...command,
             });
+        }
+
+        // Activate each of the routines that are supported by the service.
+        for (const routine of service.getRoutines()) {
+            if (routine.intervalSeconds <= 0 || routine.intervalSeconds > kMaximumIntervalSeconds)
+                throw new Error(`Routine with out-of-bounds interval specified for ${identifier}.`);
+
+            setTimeout(
+                ServiceManager.prototype.executeRoutine.bind(this, routine),
+                routine.intervalSeconds * 1000);
         }
     }
 
@@ -67,10 +93,15 @@ export class ServiceManager {
         return true;
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Section: Commands
+    // ---------------------------------------------------------------------------------------------
+
     // Dispatches the given |command| with the given |parameters|, if they correctly correspond to
     // one of the service commands registered with this dispatcher. Exceptions will be thrown in
     // case of syntax validation errors, which we are strict about.
-    async dispatchCommand(command: string, parameters: any): Promise<object | null> {
+    async dispatchCommand(client: NetworkClient, command: string, parameters: any):
+            Promise<object | null> {
         const serviceCommand = this.commands.get(command);
         if (!serviceCommand)
             return null;
@@ -103,6 +134,90 @@ export class ServiceManager {
             }
         }
 
-        return await serviceCommand.handler(...parameterArray);
+        const result = await serviceCommand.handler(...parameterArray);
+        if (serviceCommand.subscribe) {
+            let subscribed = false;
+
+            // (1) If a subscription already exists, attempt to subscribe the |client| to it.
+            for (const subscription of this.subscriptions) {
+                if (subscription.command !== command)
+                    continue;  // subscription is for a different command
+
+                if (!equal(subscription.parameters, parameterArray))
+                    continue;  // different parameters were given for the subscription
+
+                if (subscription.clients.has(client))
+                    return result;  // fast-path: the subscription already exists
+
+                subscription.clients.add(client);
+                subscribed = true;
+
+                break;
+            }
+
+            // (2) Alternatively, create a new subscription for this command, and subscribe |client|
+            if (!subscribed) {
+                this.subscriptions.push({
+                    clients: new Set([ client ]),
+                    command: command,
+                    parameters: parameterArray,
+                });
+            }
+
+            // A new subscription was created, so announce this detail on the debugging logs.
+            this.logger.debug(`${client} Subscribed to ${command} broadcasts.`);
+        }
+
+        return result;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Section: Routines
+    // ---------------------------------------------------------------------------------------------
+
+    // Executes the given |routine| and schedules it to be executed again after the interval that
+    // has been requested by the service. This will account for the function's execution time.
+    async executeRoutine(routine: ServiceRoutine) {
+        try {
+            await routine.callbackFn();
+        } catch (exception) {
+            this.logger.error(`Exception when running routine: ${routine.description}`, exception);
+        }
+
+        setTimeout(
+            ServiceManager.prototype.executeRoutine.bind(this, routine),
+            routine.intervalSeconds * 1000);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Section: Message Broadcasting
+    // ---------------------------------------------------------------------------------------------
+
+    // Distributes the given |message| to all clients that listen to the given |command| with the
+    // given |parameters|, to enable targetted updates to relevant clients.
+    async distribute(command: string, parameters: Array<any>, message: object): Promise<void> {
+        const promii = [];
+
+        for (const subscription of this.subscriptions) {
+            if (subscription.command !== command)
+                continue;  // distribution for a different command
+
+            if (!equal(subscription.parameters, parameters))
+                continue;  // distribution for a different parameter context
+
+            for (const client of subscription.clients)
+                promii.push(client.send(message));
+        }
+
+        await Promise.all(promii);
+    }
+
+    // Called when the |client| has disconnected from the network. They will cease to receive any
+    // broadcasts for commands they have been subscribed to.
+    onClientDisconnected(client: NetworkClient): void {
+        for (const subscription of this.subscriptions) {
+            if (subscription.clients.has(client))
+                subscription.clients.delete(client);
+        }
     }
 }
