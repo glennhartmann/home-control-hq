@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import { default as equal } from 'deep-equal';
 import { v3 as hue } from 'node-hue-api';
 
 import { Colour, getLightColour, getLightXY } from './colours';
@@ -169,6 +170,9 @@ export class Interface {
             }
         }
 
+        if (!brightnesses.length) brightnesses.push(0);
+        if (!colours.length) colours.push([ 0, 0, 0 ]);
+
         // (2) Compose the average brightness and colours for all powered lights in the group.
         const brightness =
             Math.floor(brightnesses.reduce((acc, value) => acc + value, 0) / brightnesses.length);
@@ -222,7 +226,24 @@ export class Interface {
         const bridge = await this.updateBridge();
         const updates = new Map<string, State>();
 
-        // TODO: Process differences between |bridge| and |this.bridge|.
+        // Only consider the existing groups, since new groups cannot yet have subscribers. We need
+        // to consider the possibility for (unused) groups having been removed as well.
+        for (const [ groupId, group ] of this.bridge.groups) {
+            if (!bridge.groups.has(groupId))
+                continue;  // the group has been removed, ignore it
+
+            const existingState = this.composeState(group.name);
+            const updatedState = this.composeState(group.name, bridge);
+
+            if (equal(existingState, updatedState))
+                continue;  // the group has not seen any updates
+
+            this.logger.info(`Philips Hue state has changed for the "${group.name}" group.`);
+
+            updates.set(group.name, updatedState);
+        }
+
+        // Activate the updated |bridge| status as the most recent cache.
         this.bridge = bridge;
 
         return updates;
@@ -296,6 +317,9 @@ export class Interface {
         for (const group of response) {
             if (!['LightGroup', 'Room', 'Zone'].includes(group.type))
                 continue;
+
+            if (!group.id && group.name === 'Group 0')
+                continue;  // ignore the default "group 0" entry
 
             groups.set(group.id as number, {
                 id: group.id as number,

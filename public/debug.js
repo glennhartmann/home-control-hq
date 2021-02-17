@@ -35,7 +35,11 @@ export class DebugInterface {
         this.consoleMessage('Connection with the server has been lost.');
     }
 
-    onConnectionMessage(event) {}
+    onConnectionMessage(event) {
+        const message = event.detail;
+
+        this.consoleMessage(`⚡ Command: ${message.command}`, message);
+    }
 
     // ---------------------------------------------------------------------------------------------
 

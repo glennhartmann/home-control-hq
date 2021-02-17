@@ -171,6 +171,11 @@ export class PhilipsHueService implements Service {
     // Synchronizes state with the Philips Hue bridge. This will be called periodically, and changes
     // will be issued to subscribed home control displays through a broadcast.
     async updateState(): Promise<boolean> {
+        const updates = await this.interface.synchronize();
+
+        for (const [ group, state ] of updates)
+            this.broadcast?.distribute('philips-hue-state', [ group ], { group, state });
+
         return true;
     }
 }

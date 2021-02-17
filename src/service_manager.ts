@@ -166,6 +166,9 @@ export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver
                 });
             }
 
+            // (3) Subscribe to disconnection events from the |client|.
+            client.addObserver(this);
+
             // A new subscription was created, so announce this detail on the debugging logs.
             this.logger.debug(`${client} Subscribed to ${command} broadcasts.`);
         }
@@ -226,7 +229,7 @@ export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver
                 continue;  // distribution for a different parameter context
 
             for (const client of subscription.clients)
-                promii.push(client.send(message));
+                promii.push(client.send({ command, ...message }));
         }
 
         await Promise.all(promii);
@@ -235,9 +238,7 @@ export class ServiceManager implements ServiceBroadcaster, NetworkClientObserver
     // Called when the |client| has disconnected from the network. They will cease to receive any
     // broadcasts for commands they have been subscribed to.
     onClientDisconnected(client: NetworkClient): void {
-        for (const subscription of this.subscriptions) {
-            if (subscription.clients.has(client))
-                subscription.clients.delete(client);
-        }
+        for (const subscription of this.subscriptions)
+            subscription.clients.delete(client);
     }
 }
