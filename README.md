@@ -34,6 +34,7 @@ library. Each service entry controls either a named group or room.
 The following commands are supported by the Philips Hue service:
 
   * **philips-hue-brightness** (`group`, `brightness`): Change the brightness of a light group.
+  * **philips-hue-colour** (`group`, `colour`): Change the colour of a light group (RRGGBB).
   * **philips-hue-power** (`group`, `on`): Toggle power to the lights in a Philips Hue light group.
   * **philips-hue-scene** (`group`, `scene`): Change the scene applied to a Philips Hue light group.
   * **philips-hue-state** (`group`): Retrieve the full state of a Philips Hue light group.

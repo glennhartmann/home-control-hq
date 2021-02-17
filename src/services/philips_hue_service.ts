@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import { Connection } from './philips_hue/connection';
-import { LightGroup } from './philips_hue/light_group';
-import { Manager } from './philips_hue/manager';
+import { Interface } from './philips_hue/interface';
 import { Server } from '../server';
 import { Service, ServiceBroadcaster, ServiceCommand, ServiceRoutine } from '../service';
 
@@ -13,11 +12,11 @@ import { Service, ServiceBroadcaster, ServiceCommand, ServiceRoutine } from '../
 export class PhilipsHueService implements Service {
     private broadcast?: ServiceBroadcaster;
     private connection: Connection;
-    private manager: Manager;
+    private interface: Interface;
 
     constructor(server: Server) {
         this.connection = new Connection(server.database, server.logger);
-        this.manager = new Manager(this.connection, server.logger);
+        this.interface = new Interface(this.connection, server.database, server.logger);
     }
 
     // Returns the identifier that is unique to this service.
@@ -38,11 +37,20 @@ export class PhilipsHueService implements Service {
             },
             {
                 command: 'philips-hue-brightness',
-                description: 'Change the brightness of a Philips Hue light group; [0-254)',
+                description: 'Change the brightness of a Philips Hue light group (0-100%)',
                 handler: PhilipsHueService.prototype.handleBrightnessCommand.bind(this),
                 parameters: [
                     { name: 'group', type: 'string' },
                     { name: 'brightness', type: 'number' },
+                ]
+            },
+            {
+                command: 'philips-hue-colour',
+                description: 'Change the colour of a Philips Hue light group (RRGGBB)',
+                handler: PhilipsHueService.prototype.handleColourCommand.bind(this),
+                parameters: [
+                    { name: 'group', type: 'string' },
+                    { name: 'colour', type: 'string' },
                 ]
             },
             {
@@ -89,7 +97,9 @@ export class PhilipsHueService implements Service {
         if (!await this.connection.initialize())
             return false;
 
-        return await this.updateState();
+        await this.interface.synchronize();
+
+        return true;
     }
 
     // Validates whether the given |options| are valid for use with the Philips Hue service.
@@ -105,10 +115,24 @@ export class PhilipsHueService implements Service {
 
     // Change the brightness of a Philips Hue light group.
     async handleBrightnessCommand(group: string, brightness: number): Promise<object> {
-        const lightGroup = this.findLightGroupOrThrow(group);
-        await lightGroup.update(this.connection, {
-            on: true,
-            brightness,
+        await this.interface.update(group, {
+            brightness, on: brightness > 0
+        });
+
+        return { /* no data */ };
+    }
+
+    // Change the colour of a Philips Hue light group.
+    async handleColourCommand(group: string, colour: string): Promise<object> {
+        if (!/^[0-9A-F]{6}$/i.test(colour))
+            throw new Error(`Colour should be specified as RRGGBB in hexadecimal format.`);
+
+        const r = parseInt(colour.substring(0, 2), 16);
+        const g = parseInt(colour.substring(2, 4), 16);
+        const b = parseInt(colour.substring(4, 6), 16);
+
+        await this.interface.update(group, {
+            colour: [ r, g, b ]
         });
 
         return { /* no data */ };
@@ -116,9 +140,8 @@ export class PhilipsHueService implements Service {
 
     // Toggle power to the lights in a Philips Hue light group.
     async handlePowerCommand(group: string, on: boolean): Promise<object> {
-        const lightGroup = this.findLightGroupOrThrow(group);
-        await lightGroup.update(this.connection, {
-            on,
+        await this.interface.update(group, {
+            on
         });
 
         return { /* no data */ };
@@ -126,10 +149,8 @@ export class PhilipsHueService implements Service {
 
     // Change the scene applied to a Philips Hue light group.
     async handleSceneCommand(group: string, scene: string): Promise<object> {
-        const lightGroup = this.findLightGroupOrThrow(group);
-        await lightGroup.update(this.connection, {
-            on: true,  // TODO: Is this required? Would it force all lights in a group to be on?
-            scene,
+        await this.interface.update(group, {
+            scene
         });
 
         return { /* no data */ };
@@ -145,24 +166,9 @@ export class PhilipsHueService implements Service {
     // Routines
     // ---------------------------------------------------------------------------------------------
 
-    // Synchronizes state with the Philips Hue bridge. This will be called on start-up, as well as
-    // periodically, to make sure that external changes are reflected on the controllers.
+    // Synchronizes state with the Philips Hue bridge. This will be called periodically, and changes
+    // will be issued to subscribed home control displays through a broadcast.
     async updateState(): Promise<boolean> {
-        await this.manager.update();
         return true;
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // Utility functions
-    // ---------------------------------------------------------------------------------------------
-
-    // Finds the light group identified by the |group| name, or throws an exception when it cannot
-    // be found in the configuration. That might indicate that changes have just been made.
-    findLightGroupOrThrow(group: string): LightGroup {
-        const lightGroup = this.manager.getGroup(group);
-        if (!lightGroup)
-            throw new Error(`The light group named "${group}" is not known to Philips Hue.`);
-
-        return lightGroup;
     }
 }
