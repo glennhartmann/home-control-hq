@@ -76,6 +76,15 @@ interface Scene {
     lights: Array<LightID>;
 }
 
+// Representation of a scene as it will be shared with clients.
+interface StateScene {
+    // Name of the scene, as it should be shown in the user interface.
+    name: string;
+
+    // Colour of the scene, as [R, G, B] in range of 0-255. May be lazily computed.
+    colour: Colour;
+}
+
 // Representation of current state for a particular group that is to be communicated with the front-
 // end of the home control system. Abstracts over individual groups, lights and scenes.
 interface State {
@@ -83,10 +92,13 @@ interface State {
     on: boolean;
 
     // Brightness of lights in the group when powered on, as a percentage (0-100).
-    brightness?: number;
+    brightness: number;
 
     // Colour of the lights in the group when powered on, as [R, G, B] in range of 0-255.
-    colour?: Colour;
+    colour: Colour;
+
+    // Array of scenes that are available for the group.
+    scenes: Array<StateScene>;
 }
 
 // The configuration that can be passed when requesting a light update. Each individual property is
@@ -129,9 +141,65 @@ export class Interface {
     // Section: State getters
     // ---------------------------------------------------------------------------------------------
 
+    // Composes the state representation for the given |group|. This is a non-trivial operation that
+    // requires iterating once over all groups, lights and scenes to find the required information.
+    composeState(group: string, bridge?: Bridge): State {
+        bridge ??= this.bridge;  // default to cached data
+
+        const id = this.findGroupIdOrThrow(group, bridge);
+        const lights = bridge.groups.get(id)!.lights;
+
+        let on: boolean = false;
+        let brightnesses: Array<number> = [];
+        let colours: Array<Colour> = [];
+        let scenes: Array<StateScene> = [];
+
+        // (1) Iterate over all lights and consider the ones part of this group.
+        for (const lightId of lights) {
+            if (!bridge.lights.has(lightId))
+                continue;  // invalid light ID given by the Philips Hue bridge...
+
+            const light = bridge.lights.get(lightId)!;
+
+            on = on || light.on;
+
+            if (light.on) {
+                brightnesses.push(light.brightness!);
+                colours.push(light.colour!);
+            }
+        }
+
+        // (2) Compose the average brightness and colours for all powered lights in the group.
+        const brightness =
+            Math.floor(brightnesses.reduce((acc, value) => acc + value, 0) / brightnesses.length);
+
+        const colour: Colour = [
+            Math.floor(colours.reduce((acc, value) => acc + value[0], 0) / colours.length),
+            Math.floor(colours.reduce((acc, value) => acc + value[1], 0) / colours.length),
+            Math.floor(colours.reduce((acc, value) => acc + value[2], 0) / colours.length),
+        ];
+
+        // (3) Compose the scenes that are part of this group, in state formatting.
+        for (const scene of bridge.scenes.values()) {
+            if (scene.group !== id)
+                continue;  // scene is owned by another group
+
+            scenes.push({
+                name: scene.name,
+
+                // TODO: Calculate & cache the colour associated with a scene.
+                colour: [ 0, 0, 0 ],
+            })
+        }
+
+        return { on, brightness, colour, scenes };
+    }
+
     // Returns the ID associated with the given |group|, or throws an exception. O(n) complexity.
-    findGroupIdOrThrow(group: string): number {
-        for (const [ id, info ] of this.bridge.groups) {
+    findGroupIdOrThrow(group: string, bridge?: Bridge): number {
+        bridge ??= this.bridge;  // default to cached data
+
+        for (const [ id, info ] of bridge.groups) {
             if (info.name !== group)
                 continue;  // different light group
 
@@ -257,13 +325,13 @@ export class Interface {
             // Here we need to consider that brightness is specified in range of [0, 254], whereas
             // colours can be specified in multiple ways. We consider the XY values.
             if (on) {
-                brightness = Math.floor(light.state.brightness / 254) * 100;
+                brightness = Math.floor((light.state.bri / 254) * 100);
                 colour = getLightColour(light.state);
             }
 
             lights.set(light.id as number, {
                 id: light.id as number,
-                model: light.model as string,
+                model: light.modelid as string,
 
                 on, brightness, colour,
             });

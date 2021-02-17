@@ -116,7 +116,7 @@ export class PhilipsHueService implements Service {
     // Change the brightness of a Philips Hue light group.
     async handleBrightnessCommand(group: string, brightness: number): Promise<object> {
         await this.interface.update(group, {
-            brightness, on: brightness > 0
+            brightness,
         });
 
         return { /* no data */ };
@@ -159,7 +159,9 @@ export class PhilipsHueService implements Service {
     // Retrieve the state of Philips Hue lights in a given group. Note that any client that invokes
     // this command will automatically get subscribed to state updates for the given |group|.
     async handleStateCommand(group: string): Promise<object> {
-        return { /* no data */ };
+        return {
+            state: this.interface.composeState(group),
+        };
     }
 
     // ---------------------------------------------------------------------------------------------
