@@ -84,7 +84,7 @@ export class PhilipsHueService implements Service {
             {
                 callbackFn: PhilipsHueService.prototype.updateState.bind(this),
                 description: 'Synchronize state with the Philips Hue bridge',
-                intervalSeconds: /* five minutes= */ 300,
+                intervalSeconds: /* five minutes= */ 60,
             }
         ];
     }
