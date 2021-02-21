@@ -2,9 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Hello, world!</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css2?family=Material+Icons&family=Open+Sans" />
+    <link rel="stylesheet" href="style/interface.css" />
+    <title>Home Control HQ - User Interface</title>
   </head>
   <body>
-    Hello, world!
+    <main id="container"></main>
+    <script type="module">
+      import { ControlInterface } from './management/control_interface.js';
+
+      window.interface = new ControlInterface({
+          container: document.getElementById('container'),
+      });
+    </script>
   </body>
 </html>

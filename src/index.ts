@@ -25,7 +25,7 @@ const server = new Server({
     environment: kEnvironmentPath,
     network: {
         hostname: '0.0.0.0',
-        port: 8001,
+        port: 8801,
         public: kPublicDirectory,
     },
 

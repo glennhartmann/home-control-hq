@@ -1,0 +1,19 @@
+/** General page layout interface **/
+
+html {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+body {
+    background-color: #383330;
+    outline: 1px solid #181110;
+
+    width: 1024px;
+    height: 768px;
+
+    font-family: 'Open Sans';
+    font-size: 16px;
+}
