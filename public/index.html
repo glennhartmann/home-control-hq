@@ -9,11 +9,35 @@
   </head>
   <body>
     <main id="container"></main>
+    <dialog id="error-dialog">
+      <h1>Fatal error</h1>
+      <p id="error-message"></p>
+      <ol>
+        <li id="error-reload-button">Reload</li>
+      </ol>
+    </dialog>
+    <dialog id="not-connected-dialog" open>
+      <h1>No connection</h1>
+      <p>
+        The controller cannot connect with the server. This should be rectified shortly.
+      </p>
+    </dialog>
+    <dialog id="select-room-dialog">
+      <h1>Select room</h1>
+      <ol id="room-list"></ol>
+    </dialog>
     <script type="module">
-      import { ControlInterface } from './management/control_interface.js';
+      import { ControlConnection } from './script/control_connection.js';
+      import { Controller } from './script/controller.js';
 
-      window.interface = new ControlInterface({
+      window.connection = new ControlConnection();
+      window.controller = new Controller(window.connection, {
           container: document.getElementById('container'),
+          dialogs: {
+            error: document.getElementById('error-dialog'),
+            notConnected: document.getElementById('not-connected-dialog'),
+            selectRoom: document.getElementById('select-room-dialog'),
+          }
       });
     </script>
   </body>

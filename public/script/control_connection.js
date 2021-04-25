@@ -38,6 +38,9 @@ export class ControlConnection extends EventTarget {
     #state = ControlConnection.STATE_DISCONNECTED;
     #responses = new Map();
 
+    // Returns whether the connection has been established and is available.
+    get available() { return this.#state === ControlConnection.STATE_CONNECTED; }
+
     // Establishes a connection to the WebSocket server. The WebSocket instance will be returned
     // when the connection has been established, or NULL will be returned when that fails.
     async connect() {

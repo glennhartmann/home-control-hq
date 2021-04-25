@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { ControlConnection } from './management/control_connection.js';
+import { ControlConnection } from './control_connection.js';
 
 export class DebugInterface {
     #connection;
