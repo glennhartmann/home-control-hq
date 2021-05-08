@@ -113,7 +113,7 @@ export class Controller {
         for (const room of rooms.sort()) {
             const roomElement = document.createElement('li');
 
-            if (room === this.#room || room === 'Kitchen')
+            if (room === this.#room)
                 roomElement.classList.add('active');
 
             roomElement.textContent = room;

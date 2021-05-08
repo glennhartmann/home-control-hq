@@ -90,12 +90,6 @@ dialog > ol {
     width: 100%;
 }
 
-dialog > ol > li.active,
-dialog > ol > li:not(.debug):hover {
-    background-color: #66c4f3;
-    color: #162a36;
-}
-
 dialog > ol > li.debug {
     color: #656c77;
     font-size: 1.5rem;
@@ -118,6 +112,12 @@ dialog > ol > li:not(.debug) {
     border-radius: 2rem;
     cursor: pointer;
     text-transform: uppercase;
+}
+
+dialog > ol > li.active,
+dialog > ol > li:not(.debug):hover {
+    background-color: #48bcf7;
+    color: #162a36;
 }
 
 /** ************************************************************************ **/
