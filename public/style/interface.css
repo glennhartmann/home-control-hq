@@ -44,6 +44,16 @@ body {
     font-size: 32px;
 }
 
+#debug-reload {
+    position: absolute;
+    left: 2rem;
+    top: 2rem;
+    color: var(--colour-base-text);
+    text-decoration: none;
+    z-index: 2;
+
+}
+
 /** ************************************************************************ **/
 /** Dialogs                                                                  **/
 /** ************************************************************************ **/
@@ -65,11 +75,11 @@ dialog {
     justify-content: center;
     align-items: center;
 
-    width: 512px;
+    width: 768px;
     height: 512px;
     margin: 0;
 
-    left: 256px;
+    left: 128px;
     top: 128px;
 }
 
@@ -134,7 +144,7 @@ dialog > ol > li:not(.debug):hover {
 
 #interface-configuration {
     display: none;  /* controlled by JavaScript */
-    padding: 1rem 1rem 0 0;
+    padding: 2rem 2rem 0 0;
 }
 
 #interface-configuration > img {
