@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { LitElement, css, html } from '../third_party/lit-element.js';
+import { LitElement, css, html } from '../third_party/lit.js';
 
 // Represents the service element which allows full control over Philips Hue lights. These will be
 // displayed as regular service bubbles, with a number of specific interactions available:
