@@ -8,6 +8,12 @@
     <title>Home Control HQ - User Interface</title>
   </head>
   <body>
+    <div id="interface">
+      <div id="interface-time"><!-- TODO: Have a clock? --></div>
+      <div id="interface-configuration">
+        <img src="configuration.svg" />
+      </div>
+    </div>
     <main id="container"></main>
     <dialog id="error-dialog">
       <h1>Fatal error</h1>
@@ -37,6 +43,9 @@
             error: document.getElementById('error-dialog'),
             notConnected: document.getElementById('not-connected-dialog'),
             selectRoom: document.getElementById('select-room-dialog'),
+          },
+          userInterface: {
+            configuration: document.getElementById('interface-configuration'),
           }
       });
     </script>

@@ -121,6 +121,29 @@ dialog > ol > li:not(.debug):hover {
 }
 
 /** ************************************************************************ **/
+/** Interface                                                                **/
+/** ************************************************************************ **/
+
+#interface {
+    width: 1024px;
+    position: absolute;
+
+    display: flex;
+    justify-content: space-between;
+}
+
+#interface-configuration {
+    display: none;  /* controlled by JavaScript */
+    padding: 1rem 1rem 0 0;
+}
+
+#interface-configuration > img {
+    cursor: pointer;
+    width: 4rem;
+    height: 4rem;
+}
+
+/** ************************************************************************ **/
 /** Services (generic)                                                       **/
 /** ************************************************************************ **/
 

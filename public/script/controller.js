@@ -7,9 +7,10 @@ import { PhilipsHueBindings } from './services/philips_hue_bindings.js';
 // Drives the entire controller, both connection management and interface management. Used for the
 // actual unit interface, but not for the debug pages.
 export class Controller {
-    #connection;  // ControlConnection instance
-    #container;   // HTMLElement for the service container
-    #dialogs;     // HTMLDialogElement[] for { error, notConnected, selectRoom }
+    #connection;     // ControlConnection instance
+    #container;      // HTMLElement for the service container
+    #dialogs;        // HTMLDialogElement[] for { error, notConnected, selectRoom }
+    #userInterface;  // HTMLElement[] for { configuration }
 
     // Name of the room this controller is responsible for.
     #room;
@@ -17,14 +18,18 @@ export class Controller {
     // Array of element bindings that have been created for this controller.
     #bindings;
 
-    constructor(connection, { container, dialogs }) {
+    constructor(connection, { container, dialogs, userInterface }) {
         this.#connection = connection;
         this.#container = container;
         this.#dialogs = dialogs;
+        this.#userInterface = userInterface;
 
         // Attach connection listeners:
         connection.addEventListener('connect', Controller.prototype.onConnected.bind(this));
         connection.addEventListener('disconnect', Controller.prototype.onDisconnected.bind(this));
+
+        // Attach event listeners to make the interface functional:
+        this.initializeInterface();
 
         // Attempt the connection:
         connection.connect();
@@ -37,13 +42,33 @@ export class Controller {
     // Called when the control connection has been established, either during device boot or when
     // connection was lost during operation. We assume a new environment each time this happens.
     async onConnected() {
+        await this.displayConfiguration(/* manual= */ false);
+    }
+
+    onDisconnected() {
+        this.toggleInterface(/* enabled= */ false);
+        this.#dialogs.notConnected.showModal();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // User Interface helpers
+    // ---------------------------------------------------------------------------------------------
+
+    // Displays a dialog that allows the user to configure the device, by selecting the room the
+    // panel should control and displaying any debug information sent by the server. |manual|
+    // indicates whether the dialog was manually requested by the user.
+    async displayConfiguration(manual) {
         const { rooms } = await this.#connection.send({ command: 'environment-rooms' });
 
-        // (1) Close the connection dialog, as we are now connected.
-        this.#dialogs.notConnected.close();
+        // (1) Close the connection dialog if it's open, as we are now connected, as well as the
+        // user interface which shouldn't be visible during this operation.
+        if (this.#dialogs.notConnected.open)
+            this.#dialogs.notConnected.close();
+
+        this.toggleInterface(/* enabled= */ false);
 
         // (2) Require the user to select a valid room which this controller is responsible for.
-        if (!this.#room || !rooms.includes(this.#room))
+        if (!this.#room || !rooms.includes(this.#room) || manual)
             this.#room = await this.selectRoom(rooms);
 
         // (3) Fetch the list of services that exist for that room.
@@ -57,18 +82,12 @@ export class Controller {
         while (this.#container.firstChild)
             this.#container.removeChild(this.#container.firstChild);
 
+        this.toggleInterface(/* enabled= */ true);
+
         this.#bindings = [];
         for (const service of services)
             await this.initializeService(service);
     }
-
-    onDisconnected() {
-        this.#dialogs.notConnected.showModal();
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // User Interface helpers
-    // ---------------------------------------------------------------------------------------------
 
     // Displays a fatal error message. The message cannot be discarded without reloading the entire
     // page & controller, and thus should only be used in exceptional circumstances.
@@ -79,7 +98,23 @@ export class Controller {
         message.textContent = errorMessage;
         reload.addEventListener('click', () => document.location.reload());
 
+        this.toggleInterface(/* enabled= */ false);
         this.#dialogs.error.show();
+    }
+
+    // Initializes the user interface elements by attaching the necessary event listeners. This will
+    // be called once per page load of the controller interface.
+    initializeInterface() {
+        // (1) Configuration button.
+        this.#userInterface.configuration.addEventListener('click', () => {
+            this.displayConfiguration(/* manual= */ true);
+        });
+    }
+
+    // Toggles whether the user interface should be visible or not.
+    toggleInterface(enabled) {
+        for (const element of Object.values(this.#userInterface))
+            element.style.display = enabled ? 'block' : 'none';
     }
 
     // Renders the given |service| in the controller's container. The service's display will be
