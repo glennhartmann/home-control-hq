@@ -174,7 +174,7 @@ main > * {
     width: var(--device-width);
     height: var(--device-height);
 
-    border-radius: calc(var(--device-width) / 2.1);
+    border-radius: 50%;
 
     scroll-snap-align: center;
     margin: var(--device-tile-padding);
@@ -185,8 +185,13 @@ main > * {
 /** Services (Philips Hue)                                                   **/
 /** ************************************************************************ **/
 
+philips-hue-element article { width: 100%; text-align: center; }
 philips-hue-element {
-    background-color: #595451;
+    background-color: var(--colour-surface-background);
+    color: var(--colour-surface-text);
+
+    display: flex;
+    align-items: center;
 }
 
 philips-hue-element[on] {

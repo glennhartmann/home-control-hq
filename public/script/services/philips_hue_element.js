@@ -44,7 +44,10 @@ export class PhilipsHueElement extends LitElement {
     // ---------------------------------------------------------------------------------------------
 
     // Called when the user clicks on the root Philips Hue element.
-    onClick() {
+    onClick(event) {
+        if (event.button !== 0)
+            return;
+
         this.dispatchEvent(new CustomEvent('toggle', {
             detail: !this.on,
         }));
