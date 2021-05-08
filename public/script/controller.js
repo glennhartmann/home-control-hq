@@ -12,7 +12,7 @@ export class Controller {
     #dialogs;     // HTMLDialogElement[] for { error, notConnected, selectRoom }
 
     // Name of the room this controller is responsible for.
-    #room = 'Kitchen';
+    #room;
 
     // Array of element bindings that have been created for this controller.
     #bindings;
@@ -112,6 +112,9 @@ export class Controller {
 
         for (const room of rooms.sort()) {
             const roomElement = document.createElement('li');
+
+            if (room === this.#room || room === 'Kitchen')
+                roomElement.classList.add('active');
 
             roomElement.textContent = room;
             roomElement.addEventListener('click', () => {
