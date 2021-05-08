@@ -130,6 +130,15 @@ export class Controller {
             roomList.appendChild(roomElement);
         }
 
+        for (const debugValue of this.#connection.debugValues) {
+            const listElement = document.createElement('li');
+
+            listElement.classList.add('debug');
+            listElement.textContent = debugValue;
+
+            roomList.appendChild(listElement);
+        }
+
         this.#dialogs.selectRoom.show();
         return await roomPromise;
     }

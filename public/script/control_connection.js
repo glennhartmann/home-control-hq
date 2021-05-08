@@ -34,12 +34,16 @@ export class ControlConnection extends EventTarget {
     static STATE_CONNECTING = 1;
     static STATE_CONNECTED = 2;
 
+    #debugValues;
     #socket;
     #state = ControlConnection.STATE_DISCONNECTED;
     #responses = new Map();
 
     // Returns whether the connection has been established and is available.
     get available() { return this.#state === ControlConnection.STATE_CONNECTED; }
+
+    // Returns the debug values provided by the server for this connection.
+    get debugValues() { return this.#debugValues ?? []; }
 
     // Establishes a connection to the WebSocket server. The WebSocket instance will be returned
     // when the connection has been established, or NULL will be returned when that fails.
@@ -88,10 +92,11 @@ export class ControlConnection extends EventTarget {
     // Called when a connection has been established. We send a "hello" message to which the hub
     // will respond with some basic information about the current environment.
     onOpen() {
-        this.sendInternal({ command: 'hello' }).then(() => {
+        this.sendInternal({ command: 'hello' }).then(response => {
             if (this.#state !== ControlConnection.STATE_CONNECTING)
                 return;  // unexpected state
 
+            this.#debugValues = response.debugValues ?? [];
             this.#state = ControlConnection.STATE_CONNECTED;
             this.dispatchEvent(new CustomEvent('connect'));
         });

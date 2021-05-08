@@ -136,7 +136,7 @@ export class Network {
     async handleInternalCommand(request: Request, command: string): Promise<object | null> {
         switch (command) {
             case 'hello':
-                return { ip: request.ip };
+                return { debugValues: [ request.ip ] };
 
             case 'reload-environment':
                 return { success: await this.delegate.reloadEnvironment() };

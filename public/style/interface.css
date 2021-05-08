@@ -91,25 +91,32 @@ dialog > ol {
 }
 
 dialog > ol > li.active,
-dialog > ol > li:hover {
+dialog > ol > li:not(.debug):hover {
     background-color: #66c4f3;
-    color: #042f49;
+    color: #162a36;
+}
+
+dialog > ol > li.debug {
+    color: #656c77;
+    font-size: 1.5rem;
 }
 
 dialog > ol > li {
     width: 90%;
+    margin: 0 auto 1rem auto;
+    text-align: center;
+}
 
+dialog > ol > li:not(.debug) {
     background-color: #9cadbc;
-    color: #0b4366;
+    color: #1b3a4d;
 
     transition: background-color .4s ease-in-out,
                 color .4s ease-in-out;
 
-    margin: 0 auto 1rem auto;
+    padding: .25rem;
     border-radius: 2rem;
     cursor: pointer;
-    padding: .25rem;
-    text-align: center;
     text-transform: uppercase;
 }
 
