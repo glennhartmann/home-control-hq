@@ -185,6 +185,7 @@ main > * {
     height: var(--device-height);
 
     border-radius: 50%;
+    will-change: opacity;
 
     scroll-snap-align: center;
     margin: var(--device-tile-padding);
@@ -199,6 +200,8 @@ philips-hue-element article { width: 100%; text-align: center; }
 philips-hue-element {
     background-color: var(--colour-surface-background);
     color: var(--colour-surface-text);
+
+    transition: background-color .4s ease-in;
 
     display: flex;
     align-items: center;
