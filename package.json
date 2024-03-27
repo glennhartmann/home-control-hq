@@ -25,7 +25,7 @@
     "@q42philips/hue-color-converter": "^1.0.0",
     "colors": "^1.4.0",
     "deep-equal": "^2.0.5",
-    "express": "^4.17.1",
+    "express": "^4.19.2",
     "express-ws": "^4.0.0",
     "node-hue-api": "^4.0.10",
     "write-file-atomic": "^3.0.3"
